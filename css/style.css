@@ -1,0 +1,35 @@
+[x-cloak] { 
+    display: none !important; 
+}
+
+.glass-effect { 
+    background: rgba(255, 255, 255, 0.9); 
+    backdrop-filter: blur(10px); 
+}
+
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+
+.progress-fill { 
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); 
+}
+
+@keyframes pulse-soft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.logo-anim { 
+    animation: pulse-soft 3s infinite; 
+}
+
+/* Transisi halus saat pindah menu */
+main {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
