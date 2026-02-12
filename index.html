@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANTRIIN - Skip the line, keep the time.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .glass-effect { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        /* Smooth scroll untuk modal */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800" x-data="antriApp()">
+
+    <div class="min-h-screen flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" x-show="!isLoggedIn" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-[3rem] p-12 shadow-2xl border border-slate-100">
+            <div class="text-center mb-10">
+                <div class="inline-block bg-indigo-600 p-5 rounded-[2rem] mb-6 shadow-xl shadow-indigo-100 rotate-3">
+                    <i class="fas fa-bolt text-white text-4xl"></i>
+                </div>
+                <h1 class="text-5xl font-black text-indigo-600 tracking-tighter uppercase leading-none italic">Antriin</h1>
+                
+                <p class="text-slate-400 font-bold text-[10px] mt-4 tracking-[0.3em] uppercase italic opacity-80">
+                    Skip the line, keep the time.
+                </p>
+                
+                <div class="flex justify-center gap-1.5 mt-6">
+                    <div class="h-1 w-8 bg-indigo-600 rounded-full"></div>
+                    <div class="h-1 w-1 bg-slate-200 rounded-full"></div>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <input type="text" x-model="authForm.username" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-none text-sm font-bold outline-none focus:ring-2 ring-indigo-100 transition" placeholder="Username">
+                <input x-show="authMode === 'register'" type="text" x-model="authForm.name" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-none text-sm font-bold outline-none focus:ring-2 ring-indigo-100 transition" placeholder="Nama Lengkap">
+                <input type="password" x-model="authForm.password" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-none text-sm font-bold outline-none focus:ring-2 ring-indigo-100 transition" placeholder="Password">
+                
+                <button @click="authMode === 'login' ? login() : register()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-indigo-100 uppercase tracking-widest transition active:scale-95 mt-2" x-text="authMode === 'login' ? 'Masuk' : 'Daftar'"></button>
+                
+                <p class="text-center text-[10px] font-black text-slate-400 uppercase mt-6 tracking-widest">
+                    <span @click="authMode = (authMode === 'login' ? 'register' : 'login')" class="text-indigo-600 cursor-pointer hover:underline" x-text="authMode === 'login' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Login'"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <nav class="sticky top-0 z-50 glass-effect border-b border-slate-200" x-show="isLoggedIn" x-cloak>
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <div class="flex items-center space-x-3 group cursor-pointer" @click="currentView = 'home'">
+                    <div class="bg-indigo-600 p-2 rounded-xl shadow-md group-hover:scale-110 transition-all">
+                        <i class="fas fa-bolt text-white text-base"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-black tracking-tighter text-indigo-600 uppercase leading-none italic">ANTRIIN</span>
+                        <span class="text-[7px] font-bold text-slate-400 uppercase tracking-[0.15em] leading-none mt-1">Skip the line, keep the time.</span>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <a href="#" @click.prevent="currentView = 'home'" class="hover:text-indigo-600 transition" :class="currentView === 'home' && 'text-indigo-600'">Eksplor</a>
+                    <a href="#" @click.prevent="currentView = 'leaderboard'" class="hover:text-indigo-600 transition" :class="currentView === 'leaderboard' && 'text-indigo-600 border-b-2 border-indigo-600 pb-1'">Leaderboard</a>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button @click="showModal = true" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center text-[10px] uppercase tracking-wider">
+                    <i class="fas fa-plus mr-2 text-[8px]"></i> Buka Antrean
+                </button>
+                <div class="h-8 w-[1px] bg-slate-200 mx-1"></div>
+                <button @click="currentView = 'profile'" class="flex items-center space-x-3 group">
+                    <div class="hidden sm:block text-right">
+                        <p class="text-[10px] font-black text-slate-800 leading-none uppercase" x-text="user.name"></p>
+                        <p class="text-[9px] font-black text-indigo-500 uppercase italic" x-text="currentRank.name"></p>
+                    </div>
+                    <div class="relative">
+                        <template x-if="user.photo"><img :src="user.photo" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-100 shadow-sm"></template>
+                        <template x-if="!user.photo"><div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border-2 border-slate-200"><i class="fas fa-user text-sm"></i></div></template>
+                    </div>
+                </button>
+                <button @click="logout()" class="text-slate-300 hover:text-red-500 transition px-2"><i class="fas fa-power-off"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-6" x-show="isLoggedIn" x-cloak>
+        
+        <div x-show="currentView === 'home'">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter text-slate-800">Available <span class="text-indigo-600">Mission</span></h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Temukan cuan sat-set hari ini</p>
+                </div>
+                <input type="text" x-model="searchQuery" placeholder="Cari lokasi atau nama misi..." class="bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-bold w-full md:w-80 focus:ring-2 ring-indigo-50 transition">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="item in filteredAntrean" :key="item.id">
+                    <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-50 hover:scale-[1.02] transition">
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-[0.2em]" x-text="item.kategori"></span>
+                            <span class="text-emerald-500 font-black text-lg" x-text="'Rp' + Number(item.harga).toLocaleString('id-ID')"></span>
+                        </div>
+                        <h3 class="text-xl font-black mb-2 uppercase italic text-slate-800" x-text="item.judul"></h3>
+                        <div class="space-y-2 mb-8">
+                            <p class="text-slate-500 text-xs font-bold flex items-center"><i class="fas fa-location-dot w-4 mr-3 text-indigo-600"></i> <span x-text="item.lokasi"></span></p>
+                            <p class="text-slate-400 text-[10px] font-bold flex items-center uppercase tracking-wider"><i class="fas fa-user w-4 mr-3"></i> <span x-text="'Client: ' + item.nama"></span></p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button @click="ambilAntrean(item)" x-show="item.status === 'OPEN'" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition">Ambil Misi</button>
+                            <a :href="'https://wa.me/' + item.wa" target="_blank" class="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg hover:bg-emerald-600 transition flex items-center justify-center">
+                                <i class="fab fa-whatsapp text-xl"></i>
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="currentView === 'leaderboard'" class="max-w-2xl mx-auto space-y-6">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-black italic uppercase text-slate-800">Top <span class="text-indigo-600">Joki</span></h2>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Skip the line, keep the time.</p>
+            </div>
+            <div class="bg-white rounded-[3rem] shadow-xl border border-slate-50 overflow-hidden">
+                <template x-for="(player, index) in leaderboardData" :key="index">
+                    <div class="flex items-center justify-between p-6 border-b border-slate-50 hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-5">
+                            <span class="w-6 text-center font-black text-slate-300 italic text-xl" x-text="'#' + (index + 1)"></span>
+                            <div class="relative">
+                                <img :src="player.photo || 'https://via.placeholder.com/100'" class="w-14 h-14 rounded-2xl object-cover shadow-md">
+                                <template x-if="index === 0"><div class="absolute -top-2 -right-2 text-amber-400 drop-shadow-md"><i class="fas fa-crown"></i></div></template>
+                            </div>
+                            <div>
+                                <p class="font-black text-slate-800 uppercase italic text-sm tracking-tight" x-text="player.name"></p>
+                                <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest" x-text="player.xp + ' XP'"></p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 px-4 py-2 rounded-xl">
+                            <p class="text-[10px] font-black text-slate-400 uppercase">Points</p>
+                            <p class="text-xs font-black text-slate-800" x-text="player.completedTasks + ' Misi'"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="currentView === 'profile'" class="max-w-4xl mx-auto space-y-8">
+            <div class="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border border-slate-50 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12"><i class="fas fa-bolt text-9xl text-indigo-600"></i></div>
+                
+                <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                    <div class="relative group">
+                        <template x-if="tempPhoto"><img :src="tempPhoto" class="w-44 h-44 rounded-[3.5rem] object-cover shadow-2xl border-4 border-white transition group-hover:brightness-90"></template>
+                        <template x-if="!tempPhoto"><div class="w-44 h-44 rounded-[3.5rem] bg-slate-100 flex items-center justify-center text-slate-300 border-4 border-white"><i class="fas fa-user text-5xl"></i></div></template>
+                        <label class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                            <div class="bg-indigo-600/50 backdrop-blur-sm p-4 rounded-full text-white"><i class="fas fa-camera"></i></div>
+                            <input type="file" @change="handlePhotoPreview" class="hidden">
+                        </label>
+                    </div>
+                    
+                    <div class="flex-1 text-center md:text-left">
+                        <div class="mb-4">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Nama Profil</p>
+                            <input type="text" x-model="tempName" class="text-3xl font-black italic uppercase text-slate-800 bg-slate-50 px-6 py-3 rounded-2xl border-none outline-none w-full md:w-auto focus:ring-2 ring-indigo-50">
+                        </div>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                            <div class="px-6 py-2 bg-indigo-600 text-white rounded-2xl text-[10px] font-black italic shadow-lg shadow-indigo-100 uppercase tracking-widest" x-text="currentRank.name"></div>
+                            <div class="px-6 py-2 bg-slate-800 text-white rounded-2xl text-[10px] font-black italic uppercase tracking-widest" x-text="user.xp + ' XP' "></div>
+                        </div>
+                        <button @click="saveProfile()" class="mt-8 bg-emerald-500 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition shadow-lg shadow-emerald-100">Update Profile</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8 mt-16 border-t border-slate-50 pt-10 text-center">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance</p>
+                        <p class="text-2xl font-black text-emerald-600" x-text="'Rp' + user.balance.toLocaleString('id-ID')"></p>
+                    </div>
+                    <div class="border-x border-slate-50">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Completed</p>
+                        <p class="text-2xl font-black text-slate-800" x-text="user.completedTasks"></p>
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Rank Progress</p>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner">
+                            <div class="bg-indigo-600 h-full transition-all duration-1000" :style="'width:' + progressXP + '%'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between ml-4">
+                    <h3 class="text-xl font-black italic uppercase text-slate-800">Misi Aktif <span class="text-indigo-600">Joki</span></h3>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest" x-text="myTasks.length + ' Sedang Jalan'"></span>
+                </div>
+                <template x-for="task in myTasks" :key="task.id">
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex items-center gap-6">
+                            <div class="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center text-white text-2xl shadow-xl shadow-indigo-100">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-black italic text-slate-800 uppercase text-lg leading-tight" x-text="task.judul"></h4>
+                                <p class="text-[10px] font-black text-slate-400 uppercase italic tracking-widest mt-1" x-text="task.lokasi"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-full md:w-auto">
+                            <a :href="'https://wa.me/' + task.wa" target="_blank" class="flex-1 md:flex-none bg-emerald-50 text-emerald-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-center hover:bg-emerald-100 transition">Contact Client</a>
+                            <button @click="finishTaskAsJoki(task)" class="flex-1 md:flex-none bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition">Finish</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-6" x-show="showModal" x-cloak>
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md" @click="showModal = false"></div>
+        <div class="bg-white w-full max-w-lg rounded-[3rem] p-10 relative shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
+            <h2 class="text-3xl font-black italic uppercase mb-8 text-slate-800 tracking-tighter">Post <span class="text-indigo-600">Mission</span></h2>
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Kategori</label>
+                        <select x-model="form.kategori" class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                            <option value="UMUM">UMUM</option>
+                            <option value="KULINER">KULINER</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Reward (Rp)</label>
+                        <input type="number" x-model="form.harga" placeholder="Contoh: 25000" class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Judul Misi</label>
+                    <input type="text" x-model="form.judul" placeholder="Contoh: Antre Mie Gacoan Sudirman" class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama</label>
+                        <input type="text" x-model="form.nama" class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">WhatsApp</label>
+                        <input type="text" x-model="form.wa" placeholder="62812xxx" class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Lokasi Detail</label>
+                    <input type="text" x-model="form.lokasi" placeholder="Lokasi & Patokan..." class="w-full px-6 py-4 rounded-2xl bg-slate-50 font-black text-xs outline-none border-none">
+                </div>
+                <button @click="tambahAntrean()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-indigo-100 uppercase tracking-[0.2em] text-xs mt-4 active:scale-95 transition">Confirm Posting</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-6" x-show="showCustomerReviewModal" x-cloak>
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md"></div>
+        <div class="bg-white w-full max-w-sm rounded-[3rem] p-10 relative shadow-2xl text-center">
+            <div class="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 text-4xl shadow-inner"><i class="fas fa-check-double"></i></div>
+            <h2 class="text-3xl font-black italic uppercase mb-2 text-slate-800">Mission Clear!</h2>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">Kerja bagus, Joki!</p>
+            <div class="bg-slate-50 p-6 rounded-[2rem] mb-10 text-left border border-slate-100">
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-3 leading-none tracking-tighter">Pendapatan Kamu:</p>
+                <div class="flex items-center justify-between">
+                    <p class="text-2xl font-black text-emerald-600" x-text="'Rp' + (activeTask?.harga || 0).toLocaleString('id-ID')"></p>
+                    <div class="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black" x-text="'+' + (activeTask?.xpReward || 0) + ' XP'"></div>
+                </div>
+            </div>
+            <button @click="completeMisi()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-xl shadow-indigo-100 active:scale-95 transition">Claim Reward</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+</html>
